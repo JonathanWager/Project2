@@ -18,6 +18,7 @@
 		B615EEE92AE26057008CB323 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = B615EEE82AE26057008CB323 /* FirebaseFirestore */; };
 		B615EEEB2AE26057008CB323 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = B615EEEA2AE26057008CB323 /* FirebaseFirestoreCombine-Community */; };
 		B615EEED2AE26057008CB323 /* FirebaseFirestoreSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B615EEEC2AE26057008CB323 /* FirebaseFirestoreSwift */; };
+		B692ECE92AF1453C00BF1E16 /* ViewModelAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692ECE82AF1453C00BF1E16 /* ViewModelAuth.swift */; };
 		B6935F162AED0EDC00E1C18F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B6935F152AED0EDC00E1C18F /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
@@ -49,6 +50,7 @@
 		B615EED02AE25F3A008CB323 /* RecipeBookUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RecipeBookUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B615EED42AE25F3A008CB323 /* RecipeBookUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeBookUITests.swift; sourceTree = "<group>"; };
 		B615EED62AE25F3A008CB323 /* RecipeBookUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeBookUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		B692ECE82AF1453C00BF1E16 /* ViewModelAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelAuth.swift; sourceTree = "<group>"; };
 		B6935F152AED0EDC00E1C18F /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -109,6 +111,7 @@
 				B615EEBB2AE25F38008CB323 /* ContentView.swift */,
 				B615EEBD2AE25F39008CB323 /* Assets.xcassets */,
 				B615EEBF2AE25F39008CB323 /* Preview Content */,
+				B692ECE82AF1453C00BF1E16 /* ViewModelAuth.swift */,
 			);
 			path = RecipeBook;
 			sourceTree = "<group>";
@@ -278,6 +281,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B692ECE92AF1453C00BF1E16 /* ViewModelAuth.swift in Sources */,
 				B615EEBC2AE25F38008CB323 /* ContentView.swift in Sources */,
 				B615EEBA2AE25F38008CB323 /* RecipeBookApp.swift in Sources */,
 			);
