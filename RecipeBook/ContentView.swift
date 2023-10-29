@@ -79,14 +79,21 @@ struct MainView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .position(x: geometry.size.width / 2, y: geometry.size.height / 4)
 
-                Color.cyan
+                /*Color.cyan
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .position(x: geometry.size.width / 2, y: 3 * geometry.size.height / 4)
+                 */
 
+                
+                Image("food2")
+                    .resizable()
+                    .frame(height: 633)//380
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 1.5)
+                
                 Text("Receptbok")
                     .font(.largeTitle)
                     .foregroundColor(.white)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 4)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 8)
             }
         }
     }
