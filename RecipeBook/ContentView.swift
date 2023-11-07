@@ -11,21 +11,25 @@ import Firebase
 
 struct ContentView: View {
     @State private var isAnimating = false
-
+    @ObservedObject var authViewModel = AuthViewModel() // Add authentication view model
+    
     var body: some View {
-        NavigationStack{
+        NavigationStack {
             ZStack {
                 if isAnimating {
-                    MainView()
+                    if authViewModel.isAuthenticated {
+                        SearchRecipe(authViewModel: authViewModel) // Navigate to SearchRecipeView when the user is logged in
+                    } else {
+                        MainView() // Navigate to MainView when the user is not logged in
+                    }
                 } else {
                     SplashScreenView()
                         .transition(.opacity)
                 }
             }
-            .onAppear {
-                withAnimation(Animation.easeInOut(duration: 4.0)) {
-                    isAnimating = true
-                }
+        }.task {
+            withAnimation(Animation.easeInOut(duration: 4.0)) {
+                isAnimating = true
             }
         }
     }
@@ -121,7 +125,7 @@ struct MainView: View{
                                 .fill(.white.opacity(0.2))
                                 .padding(8)
                             
-                            Text("Log in or Sign in")
+                            Text("Sign in or Sign up")
                                 .font(.system(.title3, design: .rounded))
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
@@ -178,6 +182,8 @@ struct MainView: View{
                         Spacer()
                     }
                 }
+                .navigationBarTitle("") // Clear the navigation bar title
+                .navigationBarHidden(true)
                 .navigationDestination(isPresented: $readyToNavigate){
                     LogInView(authViewModel: authViewModel)
                 }
@@ -191,90 +197,236 @@ struct MainView: View{
     }
 }
 
-struct SearchRecipe: View{
+struct SearchRecipe: View {
+    @ObservedObject var authViewModel: AuthViewModel
+    @State private var searchText = ""
+    
     var body: some View {
-        Text("Hello")
-    }
-}
-/*struct MainView: View {
-    var body: some View {
-        
-        VStack{
-            Text("Receptbok")
-                .font(.largeTitle)
-                .foregroundColor(.white)
+        List {
+            SearchBar(text: $searchText)
+            ForEach(sampleRecipes.filter {
+                searchText.isEmpty || $0.title.localizedCaseInsensitiveContains(searchText)
+            }, id: \.id) { recipe in
+                NavigationLink(destination: RecipeDetail(recipe: recipe, authViewModel: authViewModel)) {
+                    RecipeRow(recipe: recipe)
+                }
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.orange)
-        .padding(.bottom,500)
-        
-        VStack{
-            
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarBackground(
+            Color.orange, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .listStyle(PlainListStyle())
+        .navigationBarTitle("Recipe")
         .background(.cyan)
-        .padding(.top,259)
-    }
-}
- */
-
-/*struct MainView: View {
-    @ObservedObject var authViewModel = AuthViewModel()
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.orange
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 4)
-
-                /*Color.cyan
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .position(x: geometry.size.width / 2, y: 3 * geometry.size.height / 4)
-                 */
-
-                
-                Image("food2")
-                    .resizable()
-                    .frame(height: 633)//380
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 1.5)
-                
-                Text("Receptbok")
-                    .font(.largeTitle)
-                    .foregroundColor(.white)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 8)
-                
-                NavigationLink(destination: LogInView(authViewModel: authViewModel)) {
-                    Text("Log in/Sign in")
-                        .foregroundColor(.white)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10) // Adjust the corner radius as needed
-                                .fill(Color.orange) // Background color (orange)
-                                .overlay(
-                                RoundedRectangle(cornerRadius: 10) // Rounded rectangle with border
-                                .stroke(lineWidth: 2) // Border color and width
-                                )
-                        )
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            Button("Sign Out") {
+                authViewModel.signOut()
+                if let window = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first?.windows
+                    .first {
+                    window.rootViewController = UIHostingController(rootView: ContentView())
+                    window.makeKeyAndVisible()
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: FavoritesView(authViewModel: authViewModel)) {
+                        Image(systemName: "heart.fill")
+                        
+                    }
                 }
             }
         }
     }
-}
- */
-
-/*struct LogInView: View{
-    var body: some View{
-        ZStack{
-            Color.cyan
+    
+    struct SearchBar: View {
+        @Binding var text: String
+        
+        var body: some View {
+            HStack {
+                TextField("Search", text: $text)
+                    .padding(8)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.leading, 10)
+                if !text.isEmpty {
+                    Button(action: {
+                        text = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .padding(4)
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    struct RecipeRow: View {
+        var recipe: Recipe
+        
+        var body: some View {
+            HStack {
+                Image(recipe.imageName)
+                    .resizable()
+                    .frame(width: 50, height: 50)
+                Text(recipe.title)
+            }
+        }
+    }
+    
+    struct RecipeDetail: View{
+        var recipe: Recipe
+        @ObservedObject var authViewModel: AuthViewModel
+        @State private var isRecipeSaved: Bool = false
+        
+        
+        var body: some View{
+            VStack {
+                Image(recipe.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 200)
+                
+                Text("Ingredienser:")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                List(recipe.ingredients, id: \.self) { ingredient in
+                    Text(ingredient)
+                }
+                
+                Text("Instruktioner:")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                List(recipe.instructions, id: \.self) { instruction in
+                    Text(instruction)
+                }
+            }
+            .padding(.top, 20)
+            .navigationBarTitle(recipe.title)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(
+                Color.orange,
+                for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                Button(action: {
+                    if isRecipeSaved {
+                        removeFromSavedRecipes()
+                    } else {
+                        addToSavedRecipes()
+                    }
+                }) {
+                    Text(isRecipeSaved ? "Remove" : "Save")
+                }
+            }
+            .onAppear {
+                checkIfRecipeIsSaved()
+                print(isRecipeSaved)
+            }
+            .background(.cyan)
             
         }
-        .navigationTitle("Log In/Sign In")
-        .toolbarBackground(
-            Color.orange,
-            for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        private func checkIfRecipeIsSaved() {
+            guard let userId = authViewModel.currentUserUID else {
+                return
+            }
+            
+            let db = Firestore.firestore()
+            let savedRecipesRef = db.collection("users").document(userId).collection("savedRecipes")
+            
+            // Check if the recipe exists in the "savedRecipes" subcollection
+            savedRecipesRef.document(recipe.id.uuidString).getDocument { document, error in
+                if let document = document, document.exists {
+                    isRecipeSaved = true
+                } else {
+                    isRecipeSaved = false
+                }
+            }
+        }
+        
+        private func addToSavedRecipes() {
+            guard let userId = authViewModel.currentUserUID else {
+                return
+            }
+            
+            let db = Firestore.firestore()
+            let savedRecipesRef = db.collection("users").document(userId).collection("savedRecipes")
+            
+            // Add the recipe to the "savedRecipes" subcollection
+            savedRecipesRef.document(recipe.id.uuidString).setData([
+                "title": recipe.title,
+                "ingredients": recipe.ingredients,
+                "instructions": recipe.instructions,
+                "imageName": recipe.imageName
+            ]) { error in
+                if let error = error {
+                    print("Error adding recipe to savedRecipes: \(error.localizedDescription)")
+                } else {
+                    isRecipeSaved = true
+                }
+            }
+        }
+        
+        private func removeFromSavedRecipes() {
+            guard let userId = authViewModel.currentUserUID else {
+                return
+            }
+            
+            let db = Firestore.firestore()
+            let savedRecipesRef = db.collection("users").document(userId).collection("savedRecipes")
+            
+            // Remove the recipe from the "savedRecipes" subcollection
+            savedRecipesRef.document(recipe.id.uuidString).delete { error in
+                if let error = error {
+                    print("Error removing recipe from savedRecipes: \(error.localizedDescription)")
+                } else {
+                    isRecipeSaved = false
+                }
+            }
+        }
+    }
+    
+    struct FavoritesView: View {
+        @ObservedObject var authViewModel: AuthViewModel
+        @ObservedObject var favoritesViewModel: FavoritesViewModel // You'll need a ViewModel for handling favorites
+        
+        init(authViewModel: AuthViewModel) {
+            self.authViewModel = authViewModel
+            self.favoritesViewModel = FavoritesViewModel(authViewModel: authViewModel)
+        }
+        
+        var body: some View {
+            List {
+                ForEach(favoritesViewModel.savedRecipes, id: \.id) { recipe in
+                    NavigationLink(destination: RecipeDetail(recipe: recipe, authViewModel: authViewModel)) {
+                        RecipeRow(recipe: recipe)
+                    }
+                }
+            }
+            .navigationBarTitle("Saved Recipes")
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(
+                Color.orange, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .onAppear {
+                // Load saved recipes when the view appears
+                favoritesViewModel.loadSavedRecipes()
+            }
+        }
     }
 }
- */
+
+
+
+
+
 struct LogInView: View {
     @ObservedObject var authViewModel: AuthViewModel
     @State private var email = ""
@@ -286,7 +438,7 @@ struct LogInView: View {
     var body: some View {
         NavigationView {
             GeometryReader{ proxy in
-                Color.cyan
+                Color.orange
                 ScrollView{
                     VStack {
                         ZStack{
@@ -299,9 +451,7 @@ struct LogInView: View {
                         }
                         Spacer()
                         VStack{
-                            Text("Log In/Sign In")
-                                .font(.largeTitle)
-                                .foregroundColor(.black)
+                            
                             
                             TextField("Email", text: $email)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -318,7 +468,7 @@ struct LogInView: View {
                                     signUp()
                                 }
                             }) {
-                                Text(isSignIn ? "Log In" : "Sign Up")
+                                Text(isSignIn ? "Sign In" : "Sign Up")
                             }
                             .padding()
                             .foregroundColor(.white)
@@ -354,13 +504,14 @@ struct LogInView: View {
             }
             .ignoresSafeArea(.all, edges: .all)
         }
-        .navigationBarTitle("Log In/Sign In")
+        .navigationBarTitle("Sign In/Sign Up")
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbarBackground(
-            Color.orange,
+            Color.white,
             for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationDestination(isPresented: $readyToNavigate){
-            SearchRecipe()
+            SearchRecipe(authViewModel: authViewModel)
         }
         .onAppear {
             authViewModel.signOut()
