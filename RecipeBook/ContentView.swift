@@ -341,9 +341,16 @@ struct SearchRecipe: View {
             let db = Firestore.firestore()
             let savedRecipesRef = db.collection("users").document(userId).collection("savedRecipes")
             
-            // Check if the recipe exists in the "savedRecipes" subcollection
-            savedRecipesRef.document(recipe.id.uuidString).getDocument { document, error in
-                if let document = document, document.exists {
+            // Check if the recipe exists in the "savedRecipes" subcollection based on title
+            savedRecipesRef.whereField("title", isEqualTo: recipe.title).getDocuments { querySnapshot, error in
+                if let error = error {
+                    // Handle the error
+                    print("Error getting saved recipes: \(error.localizedDescription)")
+                    return
+                }
+
+                // Check if there is at least one document with the given title
+                if let documentCount = querySnapshot?.documents.count, documentCount > 0 {
                     isRecipeSaved = true
                 } else {
                     isRecipeSaved = false
@@ -382,12 +389,29 @@ struct SearchRecipe: View {
             let db = Firestore.firestore()
             let savedRecipesRef = db.collection("users").document(userId).collection("savedRecipes")
             
-            // Remove the recipe from the "savedRecipes" subcollection
-            savedRecipesRef.document(recipe.id.uuidString).delete { error in
+            // Remove the recipe from the "savedRecipes" subcollection based on title
+            savedRecipesRef.whereField("title", isEqualTo: recipe.title).getDocuments { querySnapshot, error in
                 if let error = error {
-                    print("Error removing recipe from savedRecipes: \(error.localizedDescription)")
-                } else {
-                    isRecipeSaved = false
+                    // Handle the error
+                    print("Error getting saved recipes: \(error.localizedDescription)")
+                    return
+                }
+                
+                // Check if there is at least one document with the given title
+                guard let document = querySnapshot?.documents.first else {
+                    // Handle the case where the document is not found
+                    print("Recipe not found in savedRecipes")
+                    return
+                }
+
+                // Remove the document with the given title
+                savedRecipesRef.document(document.documentID).delete { error in
+                    if let error = error {
+                        // Handle the error
+                        print("Error removing recipe from savedRecipes: \(error.localizedDescription)")
+                    } else {
+                        isRecipeSaved = false
+                    }
                 }
             }
         }
